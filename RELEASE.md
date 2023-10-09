@@ -71,7 +71,6 @@ Update the `release` branch:
 ```bash
 git branch -D release
 git checkout -b release
-git push
+git push --set-upstream origin release
+git checkout master
 ```
-
-
