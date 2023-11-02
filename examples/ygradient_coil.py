@@ -1,3 +1,5 @@
+#%%
+
 # System imports
 import sys
 import numpy as np
@@ -10,7 +12,11 @@ import logging
 from pyCoilGen.pyCoilGen_release import pyCoilGen
 from pyCoilGen.sub_functions.constants import DEBUG_BASIC, DEBUG_VERBOSE
 
-
+# New code added to eliminate error
+import numpy as np
+import warnings
+np.warnings = warnings
+#######
 if __name__ == '__main__':
     # Set up logging
     log = logging.getLogger(__name__)
@@ -37,7 +43,7 @@ if __name__ == '__main__':
                                             np.cos(np.linspace(0, 2 * np.pi, 10))]) * 0.01,
         'tikhonov_reg_factor': 100,             # Tikhonov regularization factor for the SF optimization [1]
 
-        'output_directory': 'images',           # [Current directory]
+        'output_directory': 'trial2',           # [Current directory]
         'project_name': 'ygradient_coil',       # ['CoilGen']
         'persistence_dir': 'debug',             # [debug]
         # 'debug': DEBUG_VERBOSE,
