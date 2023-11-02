@@ -1,3 +1,5 @@
+
+#%%
 # System imports
 import sys
 
@@ -7,7 +9,11 @@ import logging
 # Local imports
 from pyCoilGen.pyCoilGen_release import pyCoilGen
 from pyCoilGen.sub_functions.constants import DEBUG_BASIC, DEBUG_VERBOSE
-
+# New code added to eliminate error
+import numpy as np
+import warnings
+np.warnings = warnings
+#######
 if __name__ == '__main__':
     # Set up logging
     log = logging.getLogger(__name__)
@@ -49,3 +55,24 @@ if __name__ == '__main__':
     }
 
     result = pyCoilGen(log, arg_dict)
+#%%
+    ##plot result
+    from os import makedirs
+
+    import matplotlib.pyplot as plt
+    from pyCoilGen.helpers.persistence import load
+    import pyCoilGen.plotting as pcg_plt
+
+    which = 'example_ygradient'
+    solution = load('debug', which, 'final')
+    save_dir = f'{solution.input_args.output_directory}'
+    makedirs(save_dir, exist_ok=True)
+
+    coil_solutions = [solution]
+
+    # Plot a multi-plot summary of the solution
+    pcg_plt.plot_various_error_metrics(coil_solutions, 0, f'{which}', save_dir=save_dir)
+
+    # Plot the 2D projection of stream function contour loops.
+    pcg_plt.plot_2D_contours_with_sf(coil_solutions, 0, f'{which} 2D', save_dir=save_dir)
+    pcg_plt.plot_3D_contours_with_sf(coil_solutions, 0, f'{which} 3D', save_dir=save_dir)
