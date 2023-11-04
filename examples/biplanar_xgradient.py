@@ -24,7 +24,7 @@ if __name__ == '__main__':
         'field_shape_function': 'x',  # definition of the target field
         #'coil_mesh_file': 'bi_planer_rectangles_width_1000mm_distance_500mm.stl',
         'coil_mesh':'create planar mesh',
-        'planar_mesh_parameter_list': [0.35,0.600, 7, 12, 0,0, 1, 0, 0,0,0],# 350x600 planar mesh with cuboid elements of 2/mm. Normal to z axis at (0).
+        'planar_mesh_parameter_list': [0.35,0.6, 7, 12, 1,0, 0, 0, 0,0,0],# 350x600 planar mesh with cuboid elements of 2/mm. Normal to z axis at (0).
         'target_mesh_file': 'none',
         'secondary_target_mesh_file': 'none',
         'secondary_target_weight': 0.5,
@@ -51,7 +51,7 @@ if __name__ == '__main__':
         'tikhonov_reg_factor': 10,  # Tikhonov regularization factor for the SF optimization
 
         'output_directory': 'trial1',  # [Current directory]
-        'project_name': 'biplanar_xgradient_i',
+        'project_name': 'biplanar_xgradient_ii',
         'persistence_dir': 'debug',
         'debug': DEBUG_BASIC,
     }
@@ -65,7 +65,7 @@ if __name__ == '__main__':
     from pyCoilGen.helpers.persistence import load
     import pyCoilGen.plotting as pcg_plt
 
-    which = 'biplanar_xgradient'
+    which = 'biplanar_xgradient_ii'
     solution = load('debug', which, 'final')
     save_dir = f'{solution.input_args.output_directory}'
     makedirs(save_dir, exist_ok=True)
