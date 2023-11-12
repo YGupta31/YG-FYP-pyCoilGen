@@ -31,7 +31,7 @@ if __name__ == '__main__':
         'target_region_radius': 0.075,  # in meter image depth of 15 cm => r=0.075
         # 'target_region_resolution': 10,  # MATLAB 10 is the default
         'use_only_target_mesh_verts': False,
-        'target_gradient_strength': 200,
+        'target_gradient_strength': 40,
         'sf_source_file': 'none',
         # the number of potential steps that determines the later number of windings (Stream function discretization)
         'levels': 20,
@@ -52,7 +52,7 @@ if __name__ == '__main__':
         'tikhonov_reg_factor': 20,  # Tikhonov regularization factor for the SF optimization
 
         'output_directory': 'trial y gradient',  # [Current directory]
-        'project_name': 'biplanar_ygradient_200_20',
+        'project_name': 'biplanar_ygradient_40_20',
         'persistence_dir': 'debug',
         'debug': DEBUG_BASIC,
     }
@@ -66,7 +66,7 @@ if __name__ == '__main__':
     from pyCoilGen.helpers.persistence import load
     import pyCoilGen.plotting as pcg_plt
 
-    which = 'biplanar_xgradient_200_20'
+    which = 'biplanar_xgradient_40_20'
     solution = load('debug', which, 'final')
     save_dir = f'{solution.input_args.output_directory}'
     makedirs(save_dir, exist_ok=True)
