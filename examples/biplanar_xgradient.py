@@ -28,9 +28,11 @@ if __name__ == '__main__':
         'target_mesh_file': 'none',
         'secondary_target_mesh_file': 'none',
         'secondary_target_weight': 0.5,
-        'target_region_radius': 0.1,  # in meter
+        'target_region_radius': 0.075,  # in meter image depth of 15 cm => r=0.075
         # 'target_region_resolution': 10,  # MATLAB 10 is the default
         'use_only_target_mesh_verts': False,
+        'field_shape_function': 'x',
+        'target_gradient_strength': 200,
         'sf_source_file': 'none',
         # the number of potential steps that determines the later number of windings (Stream function discretization)
         'levels': 14,
@@ -38,7 +40,7 @@ if __name__ == '__main__':
         'pot_offset_factor': 0.25,
         'surface_is_cylinder_flag': True,
         # the width for the interconnections are interconnected; in meter
-        'interconnection_cut_width': 0.05,
+        'interconnection_cut_width': 0.02,
         # the length for which overlapping return paths will be shifted along the surface normals; in meter
         'normal_shift_length': 0.01,
         'iteration_num_mesh_refinement': 1,  # the number of refinements for the mesh;
@@ -50,8 +52,8 @@ if __name__ == '__main__':
         'skip_inductance_calculation': False,
         'tikhonov_reg_factor': 10,  # Tikhonov regularization factor for the SF optimization
 
-        'output_directory': 'trial1',  # [Current directory]
-        'project_name': 'biplanar_xgradient_ii',
+        'output_directory': 'trial x gradient',  # [Current directory]
+        'project_name': 'biplanar_xgradient_200_14',
         'persistence_dir': 'debug',
         'debug': DEBUG_BASIC,
     }
@@ -65,7 +67,7 @@ if __name__ == '__main__':
     from pyCoilGen.helpers.persistence import load
     import pyCoilGen.plotting as pcg_plt
 
-    which = 'biplanar_xgradient_ii'
+    which = 'biplanar_xgradient_i'
     solution = load('debug', which, 'final')
     save_dir = f'{solution.input_args.output_directory}'
     makedirs(save_dir, exist_ok=True)
