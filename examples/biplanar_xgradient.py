@@ -34,14 +34,14 @@ if __name__ == '__main__':
         'target_gradient_strength': 200,
         'sf_source_file': 'none',
         # the number of potential steps that determines the later number of windings (Stream function discretization)
-        'levels': 14,
+        'levels': 20,
         # a potential offset value for the minimal and maximal contour potential ; must be between 0 and 1
         'pot_offset_factor': 0.25,
         'surface_is_cylinder_flag': True,
         # the width for the interconnections are interconnected; in meter
         'interconnection_cut_width': 0.05,
         # the length for which overlapping return paths will be shifted along the surface normals; in meter
-        'normal_shift_length': 0.01,
+        'normal_shift_length': 0.15,
         'iteration_num_mesh_refinement': 1,  # the number of refinements for the mesh;
         'set_roi_into_mesh_center': True,
         'force_cut_selection': ['high'],
@@ -49,10 +49,10 @@ if __name__ == '__main__':
         'level_set_method': 'primary',
         'skip_postprocessing': False,
         'skip_inductance_calculation': False,
-        'tikhonov_reg_factor': 14,  # Tikhonov regularization factor for the SF optimization
+        'tikhonov_reg_factor': 20,  # Tikhonov regularization factor for the SF optimization
 
         'output_directory': 'trial y gradient',  # [Current directory]
-        'project_name': 'biplanar_ygradient_200_14',
+        'project_name': 'biplanar_ygradient_200_20',
         'persistence_dir': 'debug',
         'debug': DEBUG_BASIC,
     }
@@ -66,7 +66,7 @@ if __name__ == '__main__':
     from pyCoilGen.helpers.persistence import load
     import pyCoilGen.plotting as pcg_plt
 
-    which = 'biplanar_xgradient_200_14'
+    which = 'biplanar_xgradient_200_20'
     solution = load('debug', which, 'final')
     save_dir = f'{solution.input_args.output_directory}'
     makedirs(save_dir, exist_ok=True)
