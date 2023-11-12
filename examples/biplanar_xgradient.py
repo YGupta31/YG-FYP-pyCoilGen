@@ -35,7 +35,7 @@ if __name__ == '__main__':
         'target_gradient_strength': 200,
         'sf_source_file': 'none',
         # the number of potential steps that determines the later number of windings (Stream function discretization)
-        'levels': 14,
+        'levels': 10,
         # a potential offset value for the minimal and maximal contour potential ; must be between 0 and 1
         'pot_offset_factor': 0.25,
         'surface_is_cylinder_flag': True,
@@ -53,7 +53,7 @@ if __name__ == '__main__':
         'tikhonov_reg_factor': 10,  # Tikhonov regularization factor for the SF optimization
 
         'output_directory': 'trial x gradient',  # [Current directory]
-        'project_name': 'biplanar_xgradient_200_14',
+        'project_name': 'biplanar_xgradient_200_10',
         'persistence_dir': 'debug',
         'debug': DEBUG_BASIC,
     }
@@ -67,7 +67,7 @@ if __name__ == '__main__':
     from pyCoilGen.helpers.persistence import load
     import pyCoilGen.plotting as pcg_plt
 
-    which = 'biplanar_xgradient_200_14'
+    which = 'biplanar_xgradient_200_10'
     solution = load('debug', which, 'final')
     save_dir = f'{solution.input_args.output_directory}'
     makedirs(save_dir, exist_ok=True)
