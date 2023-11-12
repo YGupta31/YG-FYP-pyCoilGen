@@ -67,7 +67,7 @@ if __name__ == '__main__':
     from pyCoilGen.helpers.persistence import load
     import pyCoilGen.plotting as pcg_plt
 
-    which = 'biplanar_xgradient_i'
+    which = 'biplanar_xgradient_200_14'
     solution = load('debug', which, 'final')
     save_dir = f'{solution.input_args.output_directory}'
     makedirs(save_dir, exist_ok=True)
