@@ -21,15 +21,17 @@ if __name__ == '__main__':
     # logging.basicConfig(level=logging.INFO)
 
     arg_dict = {
-        'field_shape_function': 'y',  # definition of the target field
-        #'coil_mesh_file': 'bi_planer_rectangles_width_1000mm_distance_500mm.stl',
-        'coil_mesh':'create planar mesh',
-        'planar_mesh_parameter_list': [0.35,0.6, 7, 12, 1,0, 0, 0, 0,0,0],# 350x600 planar mesh with cuboid elements of 2/mm. Normal to z axis at (0).
+        'field_shape_function': 'z',  # definition of the target field
+        'coil_mesh_file': 'bi_planer_rectangles_width_1000mm_distance_500mm.stl',
+        #'coil_mesh':'create bi-planar mesh',
+        #'biplanar_mesh_parameter_list': [0.35,0.35,5 , 5, 0,0, 1, 0, 0,0,0.2],# 350x600 planar mesh with cuboid elements of 2/mm. Normal to z axis at (0).
+        'target_mesh':'create cylinder mesh',
+        'cylinder_mesh_parameter_list': [0.35, 0.075, 5, 5, 1, 0, 0, 0],
         'target_mesh_file': 'none',
         'secondary_target_mesh_file': 'none',
         'secondary_target_weight': 0.5,
-        'target_region_radius': 0.075,  # in meter image depth of 15 cm => r=0.075
-        # 'target_region_resolution': 10,  # MATLAB 10 is the default
+        #'target_region_radius': 0.075,  # in meter image depth of 15 cm => r=0.075
+        'target_region_resolution': 15,  # MATLAB 10 is the default
         'use_only_target_mesh_verts': False,
         'target_gradient_strength': 40,
         'sf_source_file': 'none',
@@ -51,8 +53,8 @@ if __name__ == '__main__':
         'skip_inductance_calculation': False,
         'tikhonov_reg_factor': 20,  # Tikhonov regularization factor for the SF optimization
 
-        'output_directory': 'trial y gradient',  # [Current directory]
-        'project_name': 'biplanar_ygradient_40_20',
+        'output_directory': 'trial culinder gradient',  # [Current directory]
+        'project_name': 'biplanar_zgradient_i',
         'persistence_dir': 'debug',
         'debug': DEBUG_BASIC,
     }
