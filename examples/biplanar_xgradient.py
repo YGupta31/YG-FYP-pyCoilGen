@@ -18,15 +18,19 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
     # logging.basicConfig(level=logging.INFO)
 
+#%%
+#
+
+
+#%%
+
     arg_dict = {
-        'field_shape_function': 'y',  # definition of the target field
-        #'coil_mesh_file': 'bi_planer_rectangles_width_1000mm_distance_500mm.stl',
-        'coil_mesh': 'create planar mesh',
-        'planar_mesh_parameter_list': [0.3, 0.175, 12, 7, 1, 0, 0, 0, -0.15, -0.0875, -0.1],
+        'field_shape_function': 'x',  # definition of the target field
+        'coil_mesh_file': 'bi_planer_rectangles_width_1000mm_distance_500mm.stl',
         'target_mesh_file': 'none',
         'secondary_target_mesh_file': 'none',
-        'secondary_target_weight': 0,
-        'target_region_radius': 0.075,  # in meter
+        'secondary_target_weight': 0.5,
+        'target_region_radius': 0.1,  # in meter
         # 'target_region_resolution': 10,  # MATLAB 10 is the default
         'use_only_target_mesh_verts': False,
         'sf_source_file': 'none',
@@ -36,26 +40,25 @@ if __name__ == '__main__':
         'pot_offset_factor': 0.25,
         'surface_is_cylinder_flag': True,
         # the width for the interconnections are interconnected; in meter
-        'interconnection_cut_width': 0.5,
+        'interconnection_cut_width': 0.05,
         # the length for which overlapping return paths will be shifted along the surface normals; in meter
-        'normal_shift_length': 0.005,
-        'iteration_num_mesh_refinement': 2,  # the number of refinements for the mesh;
-        'set_roi_into_mesh_center': False,
+        'normal_shift_length': 0.01,
+        'iteration_num_mesh_refinement': 1,  # the number of refinements for the mesh;
+        'set_roi_into_mesh_center': True,
         'force_cut_selection': ['high'],
         # Specify one of the three ways the level sets are calculated: "primary","combined", or "independent"
         'level_set_method': 'primary',
         'skip_postprocessing': False,
-        'skip_inductance_calculation': True,
-        'tikhonov_reg_factor': 5,  # Tikhonov regularization factor for the SF optimization
+        'skip_inductance_calculation': False,
+        'tikhonov_reg_factor': 10,  # Tikhonov regularization factor for the SF optimization
 
         'output_directory': 'images',  # [Current directory]
-        'project_name': 'octantiiy',
+        'project_name': 'biplanar_xgradient',
         'persistence_dir': 'debug',
-        'debug': 0,
+        'debug': DEBUG_BASIC,
     }
 
     result = pyCoilGen(log, arg_dict)
-#%%
     ##plot result
     from os import makedirs
 
@@ -76,3 +79,4 @@ if __name__ == '__main__':
     # Plot the 2D projection of stream function contour loops.
     pcg_plt.plot_2D_contours_with_sf(coil_solutions, 0, f'{which} 2D', save_dir=save_dir)
     pcg_plt.plot_3D_contours_with_sf(coil_solutions, 0, f'{which} 3D', save_dir=save_dir)
+#%%
