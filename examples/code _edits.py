@@ -437,7 +437,10 @@ if __name__ == '__main__':
 
     arg_dict = {
         'field_shape_function': 'x',  # definition of the target field
-        'coil_mesh_file': 'bi_planer_rectangles_width_1000mm_distance_500mm.stl',
+        'target_gradient_strength': 200,
+        'coil_mesh': 'create planar mesh',
+        'planar_mesh_parameter_list': [0.25,0.25,1,1,1,0,0,0,0,0,0],
+        #'coil_mesh_file': 'bi_planer_rectangles_width_1000mm_distance_500mm.stl',
         'target_mesh_file': 'none',
         'b_0_direction': [0,0,1],
         'secondary_target_mesh_file': 'none',
@@ -447,7 +450,7 @@ if __name__ == '__main__':
         'use_only_target_mesh_verts': True,
         'sf_source_file': 'none',
         # the number of potential steps that determines the later number of windings (Stream function discretization)
-        'levels': 14,
+        'levels': 2,
         # a potential offset value for the minimal and maximal contour potential ; must be between 0 and 1
         'pot_offset_factor': 0.25,
         'surface_is_cylinder_flag': False,
@@ -462,27 +465,25 @@ if __name__ == '__main__':
         'level_set_method': 'primary',
         'skip_postprocessing': False,
         'skip_inductance_calculation': True,
-        'tikhonov_reg_factor': 10,  # Tikhonov regularization factor for the SF optimization
+        'tikhonov_reg_factor': 2,  # Tikhonov regularization factor for the SF optimization
 
-        'output_directory': 'images',  # [Current directory]
-        'project_name': 'biplanar_xgradient',
+        'output_directory': 'matrix determination',  # [Current directory]
+        'project_name': 'code_edits_i',
         'persistence_dir': 'debug',
         'debug': DEBUG_BASIC,
     }
 
     result = pyCoilGen(log, arg_dict)
 #%%
-# =============================================================================
-# print(len(result.combined_mesh.vertices))
-# print('')
-# print(len(result.combined_mesh.faces))
-# print('')
-# print(len(result.combined_mesh.uv))
-# print('')
-# print(result.combined_mesh.n)
-# print('')
-# print(result.combined_mesh.boundary)
-# =============================================================================
+print(len(result.combined_mesh.vertices))
+print('')
+print(len(result.combined_mesh.faces))
+print('')
+print(len(result.combined_mesh.uv))
+print('')
+print(result.combined_mesh.n)
+print('')
+print(result.combined_mesh.boundary)
 print('b-field')
 print(result.target_field.b)
 print('coordinates')
@@ -493,3 +494,4 @@ print('')
 print(result.target_field.target_field_group_inds)
 print('')
 print(result.target_field.target_gradient_dbdxyz)
+print(result.coil_parts[0].coil_mesh)
