@@ -439,14 +439,14 @@ if __name__ == '__main__':
         'field_shape_function': 'x',  # definition of the target field
         'target_gradient_strength': 200,
         'coil_mesh': 'create planar mesh',
-        'planar_mesh_parameter_list': [0.25,0.25,1,1,1,0,0,0,0,0,0],
+        'planar_mesh_parameter_list': [0.25,0.25,2,2,1,0,0,0,0,0,0],
         #'coil_mesh_file': 'bi_planer_rectangles_width_1000mm_distance_500mm.stl',
         'target_mesh_file': 'none',
         'b_0_direction': [0,0,1],
         'secondary_target_mesh_file': 'none',
         'secondary_target_weight': 0.5,
         'target_region_radius': 0.075,  # in meter
-        'target_region_resolution': 2,  # MATLAB 10 is the default
+        'target_region_resolution': 3,  # MATLAB 10 is the default
         'use_only_target_mesh_verts': True,
         'sf_source_file': 'none',
         # the number of potential steps that determines the later number of windings (Stream function discretization)
@@ -468,30 +468,35 @@ if __name__ == '__main__':
         'tikhonov_reg_factor': 2,  # Tikhonov regularization factor for the SF optimization
 
         'output_directory': 'matrix determination',  # [Current directory]
-        'project_name': 'code_edits_i',
+        'project_name': 'code_edits_ii',
         'persistence_dir': 'debug',
         'debug': DEBUG_BASIC,
     }
 
     result = pyCoilGen(log, arg_dict)
 #%%
-print(len(result.combined_mesh.vertices))
-print('')
-print(len(result.combined_mesh.faces))
-print('')
-print(len(result.combined_mesh.uv))
-print('')
-print(result.combined_mesh.n)
-print('')
-print(result.combined_mesh.boundary)
-print('b-field')
-print(result.target_field.b)
+# =============================================================================
+# print('mesh vertices')
+# print(result.combined_mesh.vertices)
+# print('mesh faces using vertex indices')
+# print(result.combined_mesh.faces)
+# print('mesh face normals')
+# print(result.combined_mesh.n)
+# print('boundary of mesh following vertex indicies')
+# print(result.combined_mesh.boundary)
+# =============================================================================
+# =============================================================================
+# print('b-field')
+# print(result.target_field.b[2])
+# =============================================================================
 print('coordinates')
 print(result.target_field.coords)
-print('weighting')
-print(result.target_field.weights)
-print('')
-print(result.target_field.target_field_group_inds)
-print('')
-print(result.target_field.target_gradient_dbdxyz)
-print(result.coil_parts[0].coil_mesh)
+# =============================================================================
+# print('gradient direction')
+# print(result.target_field.target_gradient_dbdxyz)
+# =============================================================================
+for i in range (0,len(result.target_field.coords[0])):
+    if result.target_field.coords[0][i]<=0:
+        if result.target_field.coords[1][i]<=0:
+            if result.target_field.coords[2][i]<=0:
+                print(i)
