@@ -5,7 +5,7 @@ import sys
 
 # Logging
 import logging
-
+import matplotlib.pyplot as plt
 # Local imports
 from pyCoilGen.pyCoilGen_release import pyCoilGen
 from pyCoilGen.sub_functions.constants import DEBUG_BASIC, DEBUG_VERBOSE
@@ -438,27 +438,27 @@ if __name__ == '__main__':
     arg_dict = {
         'field_shape_function': 'x',  # definition of the target field
         'target_gradient_strength': 200,
-        'coil_mesh': 'create planar mesh',
-        'planar_mesh_parameter_list': [0.25,0.25,2,2,1,0,0,0,0,0,0],
+        'coil_mesh': 'create bi-planar mesh',
+        'planar_mesh_parameter_list': [0.25,0.25,1,1,0,0,1,0,0,0,0.2],
         #'coil_mesh_file': 'bi_planer_rectangles_width_1000mm_distance_500mm.stl',
         'target_mesh_file': 'none',
         'b_0_direction': [0,0,1],
         'secondary_target_mesh_file': 'none',
         'secondary_target_weight': 0.5,
         'target_region_radius': 0.075,  # in meter
-        'target_region_resolution': 3,  # MATLAB 10 is the default
+        'target_region_resolution': 2,  # MATLAB 10 is the default
         'use_only_target_mesh_verts': True,
         'sf_source_file': 'none',
         # the number of potential steps that determines the later number of windings (Stream function discretization)
-        'levels': 2,
+        'levels': 4,
         # a potential offset value for the minimal and maximal contour potential ; must be between 0 and 1
-        'pot_offset_factor': 0.25,
+        'pot_offset_factor': 0,
         'surface_is_cylinder_flag': False,
         # the width for the interconnections are interconnected; in meter
-        'interconnection_cut_width': 0.05,
+        'interconnection_cut_width': 0.005,
         # the length for which overlapping return paths will be shifted along the surface normals; in meter
         'normal_shift_length': 0.01,
-        'iteration_num_mesh_refinement': 1,  # the number of refinements for the mesh;
+        'iteration_num_mesh_refinement': 2,  # the number of refinements for the mesh;
         'set_roi_into_mesh_center': True,
         'force_cut_selection': ['high'],
         # Specify one of the three ways the level sets are calculated: "primary","combined", or "independent"
@@ -468,35 +468,55 @@ if __name__ == '__main__':
         'tikhonov_reg_factor': 2,  # Tikhonov regularization factor for the SF optimization
 
         'output_directory': 'matrix determination',  # [Current directory]
-        'project_name': 'code_edits_ii',
+        'project_name': 'code_edits_iii',
         'persistence_dir': 'debug',
         'debug': DEBUG_BASIC,
     }
 
     result = pyCoilGen(log, arg_dict)
 #%%
+print('mesh vertices')
+print(result.combined_mesh.vertices)
+print('mesh faces using vertex indices')
+print(result.combined_mesh.faces)
 # =============================================================================
-# print('mesh vertices')
-# print(result.combined_mesh.vertices)
-# print('mesh faces using vertex indices')
-# print(result.combined_mesh.faces)
 # print('mesh face normals')
 # print(result.combined_mesh.n)
 # print('boundary of mesh following vertex indicies')
 # print(result.combined_mesh.boundary)
-# =============================================================================
-# =============================================================================
 # print('b-field')
 # print(result.target_field.b[2])
-# =============================================================================
-print('coordinates')
-print(result.target_field.coords)
-# =============================================================================
+# print('coordinates')
+# print(result.target_field.coords)
 # print('gradient direction')
 # print(result.target_field.target_gradient_dbdxyz)
+# for i in range (0,len(result.target_field.coords[0])):
+#     if result.target_field.coords[0][i]<=0:
+#         if result.target_field.coords[1][i]<=0:
+#             if result.target_field.coords[2][i]<=0:
+#                 print(i)
 # =============================================================================
-for i in range (0,len(result.target_field.coords[0])):
-    if result.target_field.coords[0][i]<=0:
-        if result.target_field.coords[1][i]<=0:
-            if result.target_field.coords[2][i]<=0:
-                print(i)
+plt.plot(result.target_field.coords[0],result.target_field.coords[1], marker = 'o', linestyle = 'none')
+plt.show()
+plt.close()
+x1 = []
+x2 = []
+z1 = []
+z2 = []
+for i in range(len(result.combined_mesh.vertices)):
+    if i < len(result.combined_mesh.vertices)/2:
+        x1 = x1 + [result.combined_mesh.vertices[i][0]]
+        z1 = z1 + [result.combined_mesh.vertices[i][1]]
+    else:
+        x2 = x2 + [result.combined_mesh.vertices[i][0]]
+        z2 = z2 + [result.combined_mesh.vertices[i][1]]
+plt.scatter(x1, z1)
+for i in range(len(x1)):
+    plt.annotate(i, (x1[i],z1[i]))
+plt.show()
+plt.close()
+plt.scatter(x2, z2)
+for i in range(len(x2)):
+    plt.annotate(i, (x2[i],z2[i]))
+plt.show()
+plt.close()
