@@ -475,10 +475,12 @@ if __name__ == '__main__':
 
     result = pyCoilGen(log, arg_dict)
 #%%
-print('mesh vertices')
-print(result.combined_mesh.vertices)
-print('mesh faces using vertex indices')
-print(result.combined_mesh.faces)
+# =============================================================================
+# print('mesh vertices')
+# print(result.combined_mesh.vertices)
+# print('mesh faces using vertex indices')
+# print(result.combined_mesh.faces)
+# =============================================================================
 # =============================================================================
 # print('mesh face normals')
 # print(result.combined_mesh.n)
@@ -490,33 +492,92 @@ print(result.combined_mesh.faces)
 # print(result.target_field.coords)
 # print('gradient direction')
 # print(result.target_field.target_gradient_dbdxyz)
-# for i in range (0,len(result.target_field.coords[0])):
-#     if result.target_field.coords[0][i]<=0:
-#         if result.target_field.coords[1][i]<=0:
-#             if result.target_field.coords[2][i]<=0:
-#                 print(i)
 # =============================================================================
-plt.plot(result.target_field.coords[0],result.target_field.coords[1], marker = 'o', linestyle = 'none')
-plt.show()
-plt.close()
-x1 = []
-x2 = []
-z1 = []
-z2 = []
-for i in range(len(result.combined_mesh.vertices)):
-    if i < len(result.combined_mesh.vertices)/2:
-        x1 = x1 + [result.combined_mesh.vertices[i][0]]
-        z1 = z1 + [result.combined_mesh.vertices[i][1]]
-    else:
-        x2 = x2 + [result.combined_mesh.vertices[i][0]]
-        z2 = z2 + [result.combined_mesh.vertices[i][1]]
-plt.scatter(x1, z1)
-for i in range(len(x1)):
-    plt.annotate(i, (x1[i],z1[i]))
-plt.show()
-plt.close()
-plt.scatter(x2, z2)
-for i in range(len(x2)):
-    plt.annotate(i, (x2[i],z2[i]))
-plt.show()
-plt.close()
+# =============================================================================
+# plt.plot(result.target_field.coords[0],result.target_field.coords[1], marker = 'o', linestyle = 'none')
+# plt.show()
+# plt.close()
+# x1 = []
+# x2 = []
+# z1 = []
+# z2 = []
+# =============================================================================
+# =============================================================================
+# for i in range(len(result.combined_mesh.vertices)):
+#     if i < len(result.combined_mesh.vertices)/2:
+#         x1 = x1 + [result.combined_mesh.vertices[i][0]]
+#         z1 = z1 + [result.combined_mesh.vertices[i][1]]
+#     else:
+#         x2 = x2 + [result.combined_mesh.vertices[i][0]]
+#         z2 = z2 + [result.combined_mesh.vertices[i][1]]
+# plt.scatter(x1, z1)
+# for i in range(len(x1)):
+#     plt.annotate(i, (x1[i],z1[i]))
+# plt.show()
+# plt.close()
+# plt.scatter(x2, z2)
+# for i in range(len(x2)):
+#     plt.annotate(i, (x2[i],z2[i]))
+# plt.show()
+# plt.close()
+# =============================================================================
+#%%
+#Span the verticies and determine which satisfy our conditions;
+
+symmetry = [1,1,1] #xy, xz, yz
+
+xm = [] #index of satisfied verticies in mesh
+ym = []
+zm = []
+#index of satisified verticies in target field
+xt = []
+yt = []
+zt = []
+
+
+# for xy symmetry
+if symmetry[0] != 0:
+    for i in range(len(result.combined_mesh.vertices)):
+        if result.combined_mesh.vertices[i][2] <=0:# for mesh
+            zm = zm + [i]
+    for i in range(len(result.target_field.coords[2])):
+        if result.target_field.coords[2][i]<=0:# for target field
+            zt = zt + [i]
+else:
+    zm = np.arange(0, len(result.combined_mesh.vertices), 1)
+    zt = np.arange(0, len(result.target_field.coords[2]), 1)            
+# for xz symmetry
+
+if symmetry[1] != 0:
+    for i in range(len(result.combined_mesh.vertices)):
+        if result.combined_mesh.vertices[i][1] <=0: # for mesh
+            ym = ym + [i]
+    for i in range(len(result.target_field.coords[1])):
+        if result.target_field.coords[1][i]<=0:# for target field
+            yt = yt + [i]
+else:
+    ym = np.arange(0, len(result.combined_mesh.vertices), 1)
+    yt = np.arange(0, len(result.target_field.coords[2]), 1)
+    
+# for yz symmetry
+
+if symmetry[2] != 0:
+    for i in range(len(result.combined_mesh.vertices)):
+        if result.combined_mesh.vertices[i][0] <=0: # for mesh
+            xm = xm + [i]
+    for i in range(len(result.target_field.coords[0])):
+        if result.target_field.coords[0][i]<=0:# for target field
+            xt = xt + [i]
+else:
+    xm = np.arange(0, len(result.combined_mesh.vertices), 1)
+    xt = np.arange(0, len(result.target_field.coords[2]), 1)
+
+# find corresponding values of satisified verticies
+mesh_inds =list( set(xm).intersection(ym, zm))
+target_inds = list(set(xt).intersection(yt, zt))
+
+print(mesh_inds)
+print(target_inds)
+
+
+
