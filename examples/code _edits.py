@@ -3,6 +3,8 @@
 # System imports
 import sys
 
+import os
+script_dir = os.path.dirname(__file__)
 # Logging
 import logging
 import matplotlib.pyplot as plt
@@ -493,34 +495,6 @@ if __name__ == '__main__':
 # print('gradient direction')
 # print(result.target_field.target_gradient_dbdxyz)
 # =============================================================================
-# =============================================================================
-# plt.plot(result.target_field.coords[0],result.target_field.coords[1], marker = 'o', linestyle = 'none')
-# plt.show()
-# plt.close()
-# x1 = []
-# x2 = []
-# z1 = []
-# z2 = []
-# =============================================================================
-# =============================================================================
-# for i in range(len(result.combined_mesh.vertices)):
-#     if i < len(result.combined_mesh.vertices)/2:
-#         x1 = x1 + [result.combined_mesh.vertices[i][0]]
-#         z1 = z1 + [result.combined_mesh.vertices[i][1]]
-#     else:
-#         x2 = x2 + [result.combined_mesh.vertices[i][0]]
-#         z2 = z2 + [result.combined_mesh.vertices[i][1]]
-# plt.scatter(x1, z1)
-# for i in range(len(x1)):
-#     plt.annotate(i, (x1[i],z1[i]))
-# plt.show()
-# plt.close()
-# plt.scatter(x2, z2)
-# for i in range(len(x2)):
-#     plt.annotate(i, (x2[i],z2[i]))
-# plt.show()
-# plt.close()
-# =============================================================================
 #%%
 #Span the verticies and determine which satisfy our conditions;
 
@@ -557,7 +531,7 @@ if symmetry[1] != 0:
             yt = yt + [i]
 else:
     ym = np.arange(0, len(result.combined_mesh.vertices), 1)
-    yt = np.arange(0, len(result.target_field.coords[2]), 1)
+    yt = np.arange(0, len(result.target_field.coords[1]), 1)
     
 # for yz symmetry
 
@@ -570,14 +544,62 @@ if symmetry[2] != 0:
             xt = xt + [i]
 else:
     xm = np.arange(0, len(result.combined_mesh.vertices), 1)
-    xt = np.arange(0, len(result.target_field.coords[2]), 1)
+    xt = np.arange(0, len(result.target_field.coords[0]), 1)
 
 # find corresponding values of satisified verticies
-mesh_inds =list( set(xm).intersection(ym, zm))
+mesh_inds =list(set(xm).intersection(ym, zm))
 target_inds = list(set(xt).intersection(yt, zt))
 
 print(mesh_inds)
 print(target_inds)
 
 
+#%%
 
+mesh = os.path.join(script_dir, 'mesh')
+os.makedirs(mesh, exist_ok=True)
+#plot target field
+fig = plt.figure()
+ax = plt.axes(projection = '3d')
+
+for i in range(len(result.target_field.coords[0])):
+    if i in target_inds:
+        ax.scatter(result.target_field.coords[0][i], result.target_field.coords[1][i], result.target_field.coords[2][i], c= 'r')
+    else:
+        ax.scatter(result.target_field.coords[0][i], result.target_field.coords[1][i], result.target_field.coords[2][i], c= 'b')
+    #plt.annotate(i, result.target_field.coords[0][i], result.target_field.coords[1][i], result.target_field.coords[2][i])
+ax.set_title('Target Field, Target Resolution = %d'%arg_dict['target_region_resolution'])
+ax.set_xlabel('x')
+ax.set_ylabel('y')
+ax.set_zlabel('z')
+fig.savefig(os.path.join(mesh,'Target_Field_Target_Resolution_=_%d'%arg_dict['target_region_resolution']))
+plt.show()
+plt.close()
+
+#plot mesh
+
+x1 =[]
+y1 =[]
+z1 =[]
+
+for i in range(len(result.combined_mesh.vertices)):
+    x1 = x1 + [result.combined_mesh.vertices[i][0]]
+    y1 = y1 + [result.combined_mesh.vertices[i][1]]
+    z1 = z1 + [result.combined_mesh.vertices[i][2]]
+    
+    
+fig1 = plt.figure()
+ax = plt.axes(projection = '3d')
+for i in range(len(result.combined_mesh.vertices)):
+    if i in mesh_inds:
+        ax.scatter(x1[i], y1[i], z1[i], c= 'r')
+    else:
+        ax.scatter(x1[i], y1[i], z1[i], c= 'b')
+    #plt.annotate(i, x1[i], y1[i], z1[i])
+ax.set_title('Coil Mesh, Coil Mesh Resolution = %d x '%(arg_dict['planar_mesh_parameter_list'][2]*arg_dict['iteration_num_mesh_refinement']) + '%d'%(arg_dict['planar_mesh_parameter_list'][3]*arg_dict['iteration_num_mesh_refinement']))
+ax.set_xlabel('x')
+ax.set_ylabel('y')
+ax.set_zlabel('z')
+fig1.savefig(os.path.join(mesh,'Coil_Mesh_Coil_Mesh_Resolution_=_%d'%(arg_dict['planar_mesh_parameter_list'][2]*arg_dict['iteration_num_mesh_refinement']) + '_%d'%(arg_dict['planar_mesh_parameter_list'][3]*arg_dict['iteration_num_mesh_refinement'])))
+plt.show()
+plt.close()
