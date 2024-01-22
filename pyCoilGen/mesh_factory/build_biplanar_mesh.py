@@ -118,7 +118,7 @@ def create_bi_planar_mesh(input_args):
     return coil_mesh
 
 
-__default_value__ = [0.25, 0.25, 20, 20, 1, 0, 0, 0, 0, 0, 0.2]
+__default_value__ = [0.6, 0.35, 20, 20, 1, 0, 0, 0, 0, 0, 0.2]
 
 
 def get_name():
