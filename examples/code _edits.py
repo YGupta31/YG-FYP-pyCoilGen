@@ -14,7 +14,6 @@ from pyCoilGen.sub_functions.constants import DEBUG_BASIC, DEBUG_VERBOSE
 import numpy as np
 import warnings
 np.warnings = warnings
-
 #%%
 
 if __name__ == '__main__':
@@ -43,10 +42,10 @@ if __name__ == '__main__':
         'pot_offset_factor':0.25,
         'surface_is_cylinder_flag': False,
         # the width for the interconnections are interconnected; in meter
-        'interconnection_cut_width': 0.02,
+        'interconnection_cut_width': 0.01,
         # the length for which overlapping return paths will be shifted along the surface normals; in meter
         'normal_shift_length': 0.01,
-        'iteration_num_mesh_refinement': 2,  # the number of refinements for the mesh;
+        'iteration_num_mesh_refinement': 1,  # the number of refinements for the mesh;
         'set_roi_into_mesh_center': True,
         'force_cut_selection': ['high'],
         # Specify one of the three ways the level sets are calculated: "primary","combined", or "independent"
@@ -158,7 +157,7 @@ ax.set_title('Target Field, Target Resolution = %d'%arg_dict['target_region_reso
 ax.set_xlabel('x')
 ax.set_ylabel('y')
 ax.set_zlabel('z')
-fig.savefig(os.path.join(mesh,'Target_Field_Target_Resolution_=_%d'%arg_dict['target_region_resolution']))
+#fig.savefig(os.path.join(mesh,'Target_Field_Target_Resolution_=_%d'%arg_dict['target_region_resolution']))
 plt.show()
 plt.close()
 #%%
@@ -175,22 +174,23 @@ for i in range(len(result.combined_mesh.vertices)):
     
     
 fig1 = plt.figure()
-ax = plt.axes(projection = '3d')
-for i in range(len(result.combined_mesh.vertices)):
-    if i in mesh_inds:
-        ax.scatter(x1[i], y1[i], z1[i], c= 'r')
-    else:
-        ax.scatter(x1[i], y1[i], z1[i], c= 'b')
-    #plt.annotate(i, x1[i], y1[i], z1[i])
+ax = plt.axes#(projection = '3d')
+plt.scatter(x1,y1)
+for i in range(len(x1)):
+# =============================================================================
+#     if i in mesh_inds:
+#         ax.scatter(x1[i], y1[i], z1[i], c= 'r')
+#         ax.annotate(i,(x1[i],y1[i]))
+#     else:
+#         ax.scatter(x1[i], y1[i], z1[i], c= 'b')
+# =============================================================================
+    plt.annotate(i,(x1[i],y1[i]))
+
+
 ax.set_title('Coil Mesh, Coil Mesh Resolution = %d x '%(arg_dict['planar_mesh_parameter_list'][2]*arg_dict['iteration_num_mesh_refinement']) + '%d'%(arg_dict['planar_mesh_parameter_list'][3]*arg_dict['iteration_num_mesh_refinement']))
 ax.set_xlabel('x')
 ax.set_ylabel('y')
-ax.set_zlabel('z')
-fig1.savefig(os.path.join(mesh,'Coil_Mesh_Coil_Mesh_Resolution_=_%d'%(arg_dict['planar_mesh_parameter_list'][2]*arg_dict['iteration_num_mesh_refinement']) + '_%d'%(arg_dict['planar_mesh_parameter_list'][3]*arg_dict['iteration_num_mesh_refinement'])))
+#ax.set_zlabel('z')
+#fig1.savefig(os.path.join(mesh,'Coil_Mesh_Coil_Mesh_Resolution_=_%d'%(arg_dict['planar_mesh_parameter_list'][2]*arg_dict['iteration_num_mesh_refinement']) + '_%d'%(arg_dict['planar_mesh_parameter_list'][3]*arg_dict['iteration_num_mesh_refinement'])))
 plt.show()
-plt.close()
-#%%
-
-
-
-print(result.coil_parts[0].__dir__())
+plt.close
