@@ -49,172 +49,309 @@ def stream_function_optimization(coil_parts: List[CoilPart], target_field, input
     """
 
     tikhonov_reg_factor = input_args.tikhonov_reg_factor
-
+    symcondition = input_args.symmetry
     # Combine the matrices from the different mesh parts
     sensitivity_matrix = None            # MATLAB shape: (xyz) x (target field) x (num vertices)
     gradient_sensitivity_matrix = None   # MATLAB shape: (xyz) x (target field) x (num vertices)
     resistance_matrix = None             # MATLAB shape: (num vertices) x (num vertices)
     current_density_mat = None           # MATLAB shape: (num vertices) x (num faces) x (xyz)
-
-    for part_ind in range(len(coil_parts)):
-        coil_part = coil_parts[part_ind]
-        if part_ind == 0:
-            resistance_matrix = coil_part.resistance_matrix     # 1: 264,264,   2:
-            current_density_mat = coil_part.current_density_mat  # 1: 264,480,3  2: 1089,2048,3
-            sensitivity_matrix = coil_part.sensitivity_matrix   # 1: 3,257,264  2:
-            gradient_sensitivity_matrix = sensitivity_matrix    # 1: 3,257,264  2:
-        else:
-            c_mat = coil_part.current_density_mat
-            blk1 = blkdiag(current_density_mat[:, :, 0], c_mat[:, :, 0])
-            blk2 = blkdiag(current_density_mat[:, :, 1], c_mat[:, :, 1])
-            blk3 = blkdiag(current_density_mat[:, :, 2], c_mat[:, :, 2])
-            current_density_mat = np.stack((blk1, blk2, blk3), axis=-1)
-
-            sensitivity_matrix = np.concatenate([sensitivity_matrix, coil_part.sensitivity_matrix], axis=2)
-            gradient_sensitivity_matrix = np.concatenate(
-                [gradient_sensitivity_matrix, coil_part.sensitivity_matrix], axis=2)
-            resistance_matrix = np.block([[resistance_matrix, np.zeros((resistance_matrix.shape[0], coil_part.resistance_matrix.shape[1]))],
-                                          [np.zeros((coil_part.resistance_matrix.shape[0], resistance_matrix.shape[1])), coil_part.resistance_matrix]])
-
-    combined_mesh = generate_combined_mesh(coil_parts)
-
-    if get_level() >= DEBUG_VERBOSE:
-        log.debug(" - combined_mesh.bounding_box: %s", combined_mesh.bounding_box)
-    set_zero_flag = False  # Flag to force the potential on the boundary nodes to zero
-
-    # Reduce target field only to z component
-    sensitivity_matrix_single = sensitivity_matrix[2]  # 3,257,528
-    target_field_single = target_field.b[2]  # 3,3023
-
-    # Reduce the Resistance matrix for boundary nodes
-    reduced_res_matrix, _, _ = reduce_matrices_for_boundary_nodes(
-        resistance_matrix, combined_mesh, set_zero_flag
-    )
-    if get_level() >= DEBUG_VERBOSE:
-        log.debug(" - reduced_res_matrix shape: %s", reduced_res_matrix.shape)
-
-    # Reduce the sensitivity matrix for boundary nodes
-    reduced_sensitivity_matrix, boundary_nodes, is_not_boundary_node = reduce_matrices_for_boundary_nodes(
-        sensitivity_matrix_single, combined_mesh, set_zero_flag
-    )
-
-    """
-    reduced_gradient_sensitivity_matrix_x, _, _ = reduce_matrices_for_boundary_nodes(
-        gradient_sensitivity_matrix[0], combined_mesh, set_zero_flag)
-    reduced_gradient_sensitivity_matrix_y, _, _ = reduce_matrices_for_boundary_nodes(
-        gradient_sensitivity_matrix[1], combined_mesh, set_zero_flag
-    )
-    reduced_gradient_sensitivity_matrix_z, _, _ = reduce_matrices_for_boundary_nodes(
-        gradient_sensitivity_matrix[2], combined_mesh, set_zero_flag
-    )
-
-    # Reduce the current density matrix for boundary nodes
-    red_current_density_mat_u, _, _ = reduce_matrices_for_boundary_nodes(
-        current_density_mat[:, :, 0].T, combined_mesh, set_zero_flag
-    )
-    red_current_density_mat_v, _, _ = reduce_matrices_for_boundary_nodes(
-        current_density_mat[:, :, 1].T, combined_mesh, set_zero_flag
-    )
-    red_current_density_mat_w, _, _ = reduce_matrices_for_boundary_nodes(
-        current_density_mat[:, :, 2].T, combined_mesh, set_zero_flag
-    )
-    """
-
-    # Scale the Tikhonov regularization factor with the number of target points and mesh vertices
-    tikhonov_reg_factor = tikhonov_reg_factor * (
-        reduced_sensitivity_matrix.shape[0] / reduced_sensitivity_matrix.shape[1]
-    )
-
-    if input_args.sf_opt_method == "tikhonov":
-        # Calculate the stream function by the Tikhonov optimization approach
-        log.info("Optimising with Tikhonov regularisation.")
-        tik_reg_mat = tikhonov_reg_factor * reduced_res_matrix
+    
+    if symcondition == True:
+        for part_ind in range(len(coil_parts)):
+            coil_part = coil_parts[part_ind]
+            if part_ind == 0:
+                resistance_matrix = coil_part.resistance_matrix     # 1: 264,264,   2:
+                current_density_mat = coil_part.current_density_mat  # 1: 264,480,3  2: 1089,2048,3
+                sensitivity_matrix = coil_part.sensitivity_matrix   # 1: 3,257,264  2:
+                gradient_sensitivity_matrix = sensitivity_matrix    # 1: 3,257,264  2:
+            else:
+                c_mat = coil_part.current_density_mat
+                blk1 = blkdiag(current_density_mat[:, :, 0], c_mat[:, :, 0])
+                blk2 = blkdiag(current_density_mat[:, :, 1], c_mat[:, :, 1])
+                blk3 = blkdiag(current_density_mat[:, :, 2], c_mat[:, :, 2])
+                current_density_mat = np.stack((blk1, blk2, blk3), axis=-1)
+    
+                sensitivity_matrix = np.concatenate([sensitivity_matrix, coil_part.sensitivity_matrix], axis=2)
+                gradient_sensitivity_matrix = np.concatenate(
+                    [gradient_sensitivity_matrix, coil_part.sensitivity_matrix], axis=2)
+                resistance_matrix = np.block([[resistance_matrix, np.zeros((resistance_matrix.shape[0], coil_part.resistance_matrix.shape[1]))],
+                                              [np.zeros((coil_part.resistance_matrix.shape[0], resistance_matrix.shape[1])), coil_part.resistance_matrix]])
+    
+        combined_mesh = generate_combined_mesh(coil_parts)
+    
         if get_level() >= DEBUG_VERBOSE:
-            log.debug(" -- tik_reg_mat shape: %s", tik_reg_mat.shape)
-        reduced_sf = np.linalg.pinv(
-            reduced_sensitivity_matrix.T
-            @ reduced_sensitivity_matrix
-            + tik_reg_mat.T
-            @ tik_reg_mat
-        ) @ reduced_sensitivity_matrix.T @ target_field_single
-    else:
-        # For initialization, calculate the Tikhonov solution; then do an iterative optimization
-        log.info("Optimising with %s function.", input_args.sf_opt_method)
-        tik_reg_mat = tikhonov_reg_factor * reduced_res_matrix
-        reduced_sf = np.linalg.pinv(
-            reduced_sensitivity_matrix.T
-            @ reduced_sensitivity_matrix
-            + tik_reg_mat.T
-            @ tik_reg_mat
-        ) @ reduced_sensitivity_matrix.T @ target_field_single
-
-        # Find the constrained solution
-        stream_func_max = np.max(reduced_sf) * 2
-        lb = np.ones_like(reduced_sf) * (-1) * stream_func_max
-        ub = np.ones_like(reduced_sf) * stream_func_max
-
-        def cost_function(x):
-            return np.sum(
-                (reduced_sensitivity_matrix @ x - target_field_single) ** 2
-            ) + tikhonov_reg_factor * (x.T @ reduced_res_matrix @ x)
-
-        # Define the bounds
-        bounds = [(lb[i], ub[i]) for i in range(len(lb))]
-
-        # Define the options
-        # Convert the string to a dictionary
-        if input_args.minimize_method_parameters is not None:
-            method_params = ast.literal_eval(input_args.minimize_method_parameters)
-        else:
-            method_params = {}
-
-        # Convert the string to a dictionary
-        if input_args.minimize_method_options is not None:
-            minimize_method_options = ast.literal_eval(input_args.minimize_method_options)
-        else:
-            minimize_method_options = {}
-
-        if get_level() > DEBUG_NONE:
-            log.debug("Calling 'minimize' method %s with parameters: \"%s\" and options=\"%s\"",
-                      input_args.minimize_method, method_params, minimize_method_options)
-
-        # Perform the optimization
-        result = minimize(cost_function, reduced_sf, method=input_args.minimize_method, bounds=bounds,
-                          **method_params, options=minimize_method_options)
-        log.debug("Detailed minimize result: Success: %s, message: %s", result.success, result.message)
-        if get_level() >= DEBUG_VERBOSE:
-            log.debug("Detailed minimize result: %s", result)
-        reduced_sf = result.x
-
-    # Reexpand the stream potential to the boundary nodes
-    opt_stream_func = reexpand_stream_function_for_boundary_nodes(
-        reduced_sf, boundary_nodes, is_not_boundary_node, set_zero_flag)
-    combined_mesh.stream_function = opt_stream_func
-
-    # Calculate the magnetic field generated by the optimized stream function
-    b_field_opt_sf = np.vstack(
-        (
-            sensitivity_matrix[0] @ opt_stream_func,
-            sensitivity_matrix[1] @ opt_stream_func,
-            sensitivity_matrix[2] @ opt_stream_func,
+            log.debug(" - combined_mesh.bounding_box: %s", combined_mesh.bounding_box)
+        set_zero_flag = False  # Flag to force the potential on the boundary nodes to zero
+    
+        # Reduce target field only to z component
+        sensitivity_matrix_single = sensitivity_matrix[2]  # 3,257,528
+        target_field_single = target_field.b[2]  # 3,3023
+    
+        # Reduce the Resistance matrix for boundary nodes
+        reduced_res_matrix, _, _ = reduce_matrices_for_boundary_nodes(
+            resistance_matrix, combined_mesh, set_zero_flag, symcondition
         )
-    ).T
+        if get_level() >= DEBUG_VERBOSE:
+            log.debug(" - reduced_res_matrix shape: %s", reduced_res_matrix.shape)
+    
+        # Reduce the sensitivity matrix for boundary nodes
+        reduced_sensitivity_matrix, boundary_nodes, is_not_boundary_node = reduce_matrices_for_boundary_nodes(
+            sensitivity_matrix_single, combined_mesh, set_zero_flag, symcondition
+        )
+    
+        # Scale the Tikhonov regularization factor with the number of target points and mesh vertices
+        tikhonov_reg_factor = tikhonov_reg_factor * (
+            reduced_sensitivity_matrix.shape[0] / reduced_sensitivity_matrix.shape[1]
+        )
+    
+        if input_args.sf_opt_method == "tikhonov":
+            # Calculate the stream function by the Tikhonov optimization approach
+            log.info("Optimising with Tikhonov regularisation.")
+            tik_reg_mat = tikhonov_reg_factor * reduced_res_matrix
+            if get_level() >= DEBUG_VERBOSE:
+                log.debug(" -- tik_reg_mat shape: %s", tik_reg_mat.shape)
+            reduced_sf = np.linalg.pinv(
+                reduced_sensitivity_matrix.T
+                @ reduced_sensitivity_matrix
+                + tik_reg_mat.T
+                @ tik_reg_mat
+            ) @ reduced_sensitivity_matrix.T @ target_field_single
+        else:
+            # For initialization, calculate the Tikhonov solution; then do an iterative optimization
+            log.info("Optimising with %s function.", input_args.sf_opt_method)
+            tik_reg_mat = tikhonov_reg_factor * reduced_res_matrix
+            reduced_sf = np.linalg.pinv(
+                reduced_sensitivity_matrix.T
+                @ reduced_sensitivity_matrix
+                + tik_reg_mat.T
+                @ tik_reg_mat
+            ) @ reduced_sensitivity_matrix.T @ target_field_single
+    
+            # Find the constrained solution
+            stream_func_max = np.max(reduced_sf) * 2
+            lb = np.ones_like(reduced_sf) * (-1) * stream_func_max
+            ub = np.ones_like(reduced_sf) * stream_func_max
+    
+            def cost_function(x):
+                return np.sum(
+                    (reduced_sensitivity_matrix @ x - target_field_single) ** 2
+                ) + tikhonov_reg_factor * (x.T @ reduced_res_matrix @ x)
+    
+            # Define the bounds
+            bounds = [(lb[i], ub[i]) for i in range(len(lb))]
+    
+            # Define the options
+            # Convert the string to a dictionary
+            if input_args.minimize_method_parameters is not None:
+                method_params = ast.literal_eval(input_args.minimize_method_parameters)
+            else:
+                method_params = {}
+    
+            # Convert the string to a dictionary
+            if input_args.minimize_method_options is not None:
+                minimize_method_options = ast.literal_eval(input_args.minimize_method_options)
+            else:
+                minimize_method_options = {}
+    
+            if get_level() > DEBUG_NONE:
+                log.debug("Calling 'minimize' method %s with parameters: \"%s\" and options=\"%s\"",
+                          input_args.minimize_method, method_params, minimize_method_options)
+    
+            # Perform the optimization
+            result = minimize(cost_function, reduced_sf, method=input_args.minimize_method, bounds=bounds,
+                              **method_params, options=minimize_method_options)
+            log.debug("Detailed minimize result: Success: %s, message: %s", result.success, result.message)
+            if get_level() >= DEBUG_VERBOSE:
+                log.debug("Detailed minimize result: %s", result)
+            reduced_sf = result.x
+    
+        # Reexpand the stream potential to the boundary nodes
+        opt_stream_func = reexpand_stream_function_for_boundary_nodes(
+            reduced_sf, boundary_nodes, is_not_boundary_node, set_zero_flag)
+        combined_mesh.stream_function = opt_stream_func
+    
+        # Calculate the magnetic field generated by the optimized stream function
+        b_field_opt_sf = np.vstack(
+            (
+                sensitivity_matrix[0] @ opt_stream_func,
+                sensitivity_matrix[1] @ opt_stream_func,
+                sensitivity_matrix[2] @ opt_stream_func,
+            )
+        ).T
+    
+        # Separate the optimized stream function again onto the different mesh parts
+        for part_ind in range(len(coil_parts)):
+            coil_part = coil_parts[part_ind]
+            coil_part.stream_function = opt_stream_func[(combined_mesh.mesh_part_vertex_ind == (part_ind+1))]
+            jx = coil_part.stream_function @ coil_parts[part_ind].current_density_mat[:, :, 0]
+            jy = coil_part.stream_function @ coil_parts[part_ind].current_density_mat[:, :, 1]
+            jz = coil_part.stream_function @ coil_parts[part_ind].current_density_mat[:, :, 2]
+    
+            # MATLAB:  (xyz) x (num faces) -> Transposing to match Python
+            coil_part.current_density = np.vstack((jx, jy, jz)).T
+    
+        return coil_parts, combined_mesh, b_field_opt_sf    
+    
+    else:
+        for part_ind in range(len(coil_parts)):
+            coil_part = coil_parts[part_ind]
+            if part_ind == 0:
+                resistance_matrix = coil_part.resistance_matrix     # 1: 264,264,   2:
+                current_density_mat = coil_part.current_density_mat  # 1: 264,480,3  2: 1089,2048,3
+                sensitivity_matrix = coil_part.sensitivity_matrix   # 1: 3,257,264  2:
+                gradient_sensitivity_matrix = sensitivity_matrix    # 1: 3,257,264  2:
+            else:
+                c_mat = coil_part.current_density_mat
+                blk1 = blkdiag(current_density_mat[:, :, 0], c_mat[:, :, 0])
+                blk2 = blkdiag(current_density_mat[:, :, 1], c_mat[:, :, 1])
+                blk3 = blkdiag(current_density_mat[:, :, 2], c_mat[:, :, 2])
+                current_density_mat = np.stack((blk1, blk2, blk3), axis=-1)
+    
+                sensitivity_matrix = np.concatenate([sensitivity_matrix, coil_part.sensitivity_matrix], axis=2)
+                gradient_sensitivity_matrix = np.concatenate(
+                    [gradient_sensitivity_matrix, coil_part.sensitivity_matrix], axis=2)
+                resistance_matrix = np.block([[resistance_matrix, np.zeros((resistance_matrix.shape[0], coil_part.resistance_matrix.shape[1]))],
+                                              [np.zeros((coil_part.resistance_matrix.shape[0], resistance_matrix.shape[1])), coil_part.resistance_matrix]])
+    
+        combined_mesh = generate_combined_mesh(coil_parts,symcondition)
+    
+        if get_level() >= DEBUG_VERBOSE:
+            log.debug(" - combined_mesh.bounding_box: %s", combined_mesh.bounding_box)
+        set_zero_flag = False  # Flag to force the potential on the boundary nodes to zero
+    
+        # Reduce target field only to z component
+        sensitivity_matrix_single = sensitivity_matrix[2]  # 3,257,528
+        target_field_single = target_field.b[2]  # 3,3023
+    
+        # Reduce the Resistance matrix for boundary nodes
+        reduced_res_matrix, _, _ = reduce_matrices_for_boundary_nodes(
+            resistance_matrix, combined_mesh, set_zero_flag
+        )
+        if get_level() >= DEBUG_VERBOSE:
+            log.debug(" - reduced_res_matrix shape: %s", reduced_res_matrix.shape)
+    
+        # Reduce the sensitivity matrix for boundary nodes
+        reduced_sensitivity_matrix, boundary_nodes, is_not_boundary_node = reduce_matrices_for_boundary_nodes(
+            sensitivity_matrix_single, combined_mesh, set_zero_flag
+        )
+    
+        """
+        reduced_gradient_sensitivity_matrix_x, _, _ = reduce_matrices_for_boundary_nodes(
+            gradient_sensitivity_matrix[0], combined_mesh, set_zero_flag)
+        reduced_gradient_sensitivity_matrix_y, _, _ = reduce_matrices_for_boundary_nodes(
+            gradient_sensitivity_matrix[1], combined_mesh, set_zero_flag
+        )
+        reduced_gradient_sensitivity_matrix_z, _, _ = reduce_matrices_for_boundary_nodes(
+            gradient_sensitivity_matrix[2], combined_mesh, set_zero_flag
+        )
+    
+        # Reduce the current density matrix for boundary nodes
+        red_current_density_mat_u, _, _ = reduce_matrices_for_boundary_nodes(
+            current_density_mat[:, :, 0].T, combined_mesh, set_zero_flag
+        )
+        red_current_density_mat_v, _, _ = reduce_matrices_for_boundary_nodes(
+            current_density_mat[:, :, 1].T, combined_mesh, set_zero_flag
+        )
+        red_current_density_mat_w, _, _ = reduce_matrices_for_boundary_nodes(
+            current_density_mat[:, :, 2].T, combined_mesh, set_zero_flag
+        )
+        """
+    
+        # Scale the Tikhonov regularization factor with the number of target points and mesh vertices
+        tikhonov_reg_factor = tikhonov_reg_factor * (
+            reduced_sensitivity_matrix.shape[0] / reduced_sensitivity_matrix.shape[1]
+        )
+    
+        if input_args.sf_opt_method == "tikhonov":
+            # Calculate the stream function by the Tikhonov optimization approach
+            log.info("Optimising with Tikhonov regularisation.")
+            tik_reg_mat = tikhonov_reg_factor * reduced_res_matrix
+            if get_level() >= DEBUG_VERBOSE:
+                log.debug(" -- tik_reg_mat shape: %s", tik_reg_mat.shape)
+            reduced_sf = np.linalg.pinv(
+                reduced_sensitivity_matrix.T
+                @ reduced_sensitivity_matrix
+                + tik_reg_mat.T
+                @ tik_reg_mat
+            ) @ reduced_sensitivity_matrix.T @ target_field_single
+        else:
+            # For initialization, calculate the Tikhonov solution; then do an iterative optimization
+            log.info("Optimising with %s function.", input_args.sf_opt_method)
+            tik_reg_mat = tikhonov_reg_factor * reduced_res_matrix
+            reduced_sf = np.linalg.pinv(
+                reduced_sensitivity_matrix.T
+                @ reduced_sensitivity_matrix
+                + tik_reg_mat.T
+                @ tik_reg_mat
+            ) @ reduced_sensitivity_matrix.T @ target_field_single
+    
+            # Find the constrained solution
+            stream_func_max = np.max(reduced_sf) * 2
+            lb = np.ones_like(reduced_sf) * (-1) * stream_func_max
+            ub = np.ones_like(reduced_sf) * stream_func_max
+    
+            def cost_function(x):
+                return np.sum(
+                    (reduced_sensitivity_matrix @ x - target_field_single) ** 2
+                ) + tikhonov_reg_factor * (x.T @ reduced_res_matrix @ x)
+    
+            # Define the bounds
+            bounds = [(lb[i], ub[i]) for i in range(len(lb))]
+    
+            # Define the options
+            # Convert the string to a dictionary
+            if input_args.minimize_method_parameters is not None:
+                method_params = ast.literal_eval(input_args.minimize_method_parameters)
+            else:
+                method_params = {}
+    
+            # Convert the string to a dictionary
+            if input_args.minimize_method_options is not None:
+                minimize_method_options = ast.literal_eval(input_args.minimize_method_options)
+            else:
+                minimize_method_options = {}
+    
+            if get_level() > DEBUG_NONE:
+                log.debug("Calling 'minimize' method %s with parameters: \"%s\" and options=\"%s\"",
+                          input_args.minimize_method, method_params, minimize_method_options)
+    
+            # Perform the optimization
+            result = minimize(cost_function, reduced_sf, method=input_args.minimize_method, bounds=bounds,
+                              **method_params, options=minimize_method_options)
+            log.debug("Detailed minimize result: Success: %s, message: %s", result.success, result.message)
+            if get_level() >= DEBUG_VERBOSE:
+                log.debug("Detailed minimize result: %s", result)
+            reduced_sf = result.x
+    
+        # Reexpand the stream potential to the boundary nodes
+        opt_stream_func = reexpand_stream_function_for_boundary_nodes(
+            reduced_sf, boundary_nodes, is_not_boundary_node, set_zero_flag)
+        combined_mesh.stream_function = opt_stream_func
+    
+        # Calculate the magnetic field generated by the optimized stream function
+        b_field_opt_sf = np.vstack(
+            (
+                sensitivity_matrix[0] @ opt_stream_func,
+                sensitivity_matrix[1] @ opt_stream_func,
+                sensitivity_matrix[2] @ opt_stream_func,
+            )
+        ).T
+    
+        # Separate the optimized stream function again onto the different mesh parts
+        for part_ind in range(len(coil_parts)):
+            coil_part = coil_parts[part_ind]
+            coil_part.stream_function = opt_stream_func[(combined_mesh.mesh_part_vertex_ind == (part_ind+1))]
+            jx = coil_part.stream_function @ coil_parts[part_ind].current_density_mat[:, :, 0]
+            jy = coil_part.stream_function @ coil_parts[part_ind].current_density_mat[:, :, 1]
+            jz = coil_part.stream_function @ coil_parts[part_ind].current_density_mat[:, :, 2]
+    
+            # MATLAB:  (xyz) x (num faces) -> Transposing to match Python
+            coil_part.current_density = np.vstack((jx, jy, jz)).T
+    
+        return coil_parts, combined_mesh, b_field_opt_sf
 
-    # Separate the optimized stream function again onto the different mesh parts
-    for part_ind in range(len(coil_parts)):
-        coil_part = coil_parts[part_ind]
-        coil_part.stream_function = opt_stream_func[(combined_mesh.mesh_part_vertex_ind == (part_ind+1))]
-        jx = coil_part.stream_function @ coil_parts[part_ind].current_density_mat[:, :, 0]
-        jy = coil_part.stream_function @ coil_parts[part_ind].current_density_mat[:, :, 1]
-        jz = coil_part.stream_function @ coil_parts[part_ind].current_density_mat[:, :, 2]
 
-        # MATLAB:  (xyz) x (num faces) -> Transposing to match Python
-        coil_part.current_density = np.vstack((jx, jy, jz)).T
-
-    return coil_parts, combined_mesh, b_field_opt_sf
-
-
-def reduce_matrices_for_boundary_nodes(full_mat, coil_mesh, set_zero_flag):
+def reduce_matrices_for_boundary_nodes(full_mat, coil_mesh, set_zero_flag, symcondition):
     """
     Reduce the sensitivity matrix in order to limit the degrees of freedom on
     the boundary nodes and make sure that they have constant sf later for each boundary.
@@ -242,6 +379,10 @@ def reduce_matrices_for_boundary_nodes(full_mat, coil_mesh, set_zero_flag):
     if np.any(dim_to_reduce):
         for dim_to_reduce_ind in np.where(dim_to_reduce)[0]:
             for boundary_ind in range(num_boundaries):
+                if boundary_ind in coil_mesh.splane_boundary:
+                    set_zero_flag = True
+                else:
+                    set_zero_flag = False
                 if set_zero_flag:
                     reduced_mat[boundary_nodes[boundary_ind], :] = 0
                 else:
@@ -300,6 +441,10 @@ def reexpand_stream_function_for_boundary_nodes(reduced_sf, boundary_nodes, is_n
 
     # Assign the stream function values for the boundary nodes
     for boundary_ind in range(len(boundary_nodes)):
+        if boundary_ind in coil_mesh.splane_boundary:
+            set_zero_flag = True
+        else:
+            set_zero_flag = False
         if set_zero_flag:
             sf[boundary_nodes[boundary_ind]] = 0
         else:
@@ -310,56 +455,112 @@ def reexpand_stream_function_for_boundary_nodes(reduced_sf, boundary_nodes, is_n
     return sf
 
 
-def generate_combined_mesh(coil_parts: List[CoilPart]):
-    # Generate a combined mesh container
-    c_mesh = coil_parts[0].coil_mesh
-    combined_mesh_part_vertex_ind = np.ones((c_mesh.get_vertices().shape[0]), dtype=int)
-    combined_boundary = c_mesh.boundary.copy()
-
-    combined_faces = c_mesh.get_faces()
-    combined_vertices = c_mesh.get_vertices()
-    combined_uv = c_mesh.uv.copy()
-    combined_n = c_mesh.n.copy()
-
-    for part_ind in range(1, len(coil_parts)):
-        coil_mesh = coil_parts[part_ind].coil_mesh
-        combined_faces = np.concatenate(
-            [combined_faces, coil_mesh.get_faces() + combined_vertices.shape[1]], axis=0
+def generate_combined_mesh(coil_parts: List[CoilPart],symcondition):
+    #check symmetry condition
+    if symcondition == True:
+        # Generate a combined mesh container for only the 
+        c_mesh = coil_parts[0].coil_mesh.sym
+        combined_mesh_part_vertex_ind = np.ones((c_mesh.get_vertices().shape[0]), dtype=int)
+        combined_boundary = c_mesh.boundary.copy()
+    
+        combined_faces = c_mesh.get_faces()
+        combined_vertices = c_mesh.get_vertices()
+        combined_uv = c_mesh.uv.copy()
+        combined_n = c_mesh.n.copy()
+    
+        for part_ind in range(1, len(coil_parts)):
+            coil_mesh = coil_parts[part_ind].coil_mesh
+            combined_faces = np.concatenate(
+                [combined_faces, coil_mesh.get_faces() + combined_vertices.shape[1]], axis=0
+            )
+            combined_n = np.concatenate([combined_n, coil_mesh.n], axis=0)
+            combined_uv = np.concatenate((combined_uv, coil_mesh.uv))
+    
+            combined_mesh_part_vertex_ind = np.concatenate(
+                [
+                    combined_mesh_part_vertex_ind,
+                    np.ones((coil_mesh.get_vertices().shape[0]), dtype=int) * (part_ind+1),
+                ],
+                axis=0,
+            )
+    
+            # Compute combined boundary
+            c_boundary = coil_mesh.boundary
+            offset = combined_vertices.shape[0]
+            for boundary_ind in range(len(c_boundary)):
+                combined_boundary = np.append(combined_boundary, [None])
+                new_array = coil_mesh.boundary[boundary_ind]+offset
+                combined_boundary[-1] = new_array
+    
+            combined_vertices = np.concatenate([combined_vertices, coil_mesh.get_vertices()], axis=0)
+    
+        combined_bounding_box = np.array(
+            (
+                [np.min(combined_vertices[:, 0]), np.max(combined_vertices[:, 0])],
+                [np.min(combined_vertices[:, 1]), np.max(combined_vertices[:, 1])],
+                [np.min(combined_vertices[:, 2]), np.max(combined_vertices[:, 2])],
+            )
         )
-        combined_n = np.concatenate([combined_n, coil_mesh.n], axis=0)
-        combined_uv = np.concatenate((combined_uv, coil_mesh.uv))
-
-        combined_mesh_part_vertex_ind = np.concatenate(
-            [
-                combined_mesh_part_vertex_ind,
-                np.ones((coil_mesh.get_vertices().shape[0]), dtype=int) * (part_ind+1),
-            ],
-            axis=0,
+    
+        combined_mesh = DataStructure(vertices=combined_vertices, faces=combined_faces)
+        combined_mesh.uv = combined_uv
+        combined_mesh.n = combined_n
+        combined_mesh.boundary = combined_boundary
+        combined_mesh.bounding_box = combined_bounding_box
+        combined_mesh.mesh_part_vertex_ind = combined_mesh_part_vertex_ind
+        combined_mesh.t_boundary = c_mesh.t_boundary
+        combined_mesh.splane_boundary = c_mesh.splane_boundary
+        return combined_mesh
+    else:
+        # Generate a combined mesh container
+        c_mesh = coil_parts[0].coil_mesh
+        combined_mesh_part_vertex_ind = np.ones((c_mesh.get_vertices().shape[0]), dtype=int)
+        combined_boundary = c_mesh.boundary.copy()
+    
+        combined_faces = c_mesh.get_faces()
+        combined_vertices = c_mesh.get_vertices()
+        combined_uv = c_mesh.uv.copy()
+        combined_n = c_mesh.n.copy()
+    
+        for part_ind in range(1, len(coil_parts)):
+            coil_mesh = coil_parts[part_ind].coil_mesh
+            combined_faces = np.concatenate(
+                [combined_faces, coil_mesh.get_faces() + combined_vertices.shape[1]], axis=0
+            )
+            combined_n = np.concatenate([combined_n, coil_mesh.n], axis=0)
+            combined_uv = np.concatenate((combined_uv, coil_mesh.uv))
+    
+            combined_mesh_part_vertex_ind = np.concatenate(
+                [
+                    combined_mesh_part_vertex_ind,
+                    np.ones((coil_mesh.get_vertices().shape[0]), dtype=int) * (part_ind+1),
+                ],
+                axis=0,
+            )
+    
+            # Compute combined boundary
+            c_boundary = coil_mesh.boundary
+            offset = combined_vertices.shape[0]
+            for boundary_ind in range(len(c_boundary)):
+                combined_boundary = np.append(combined_boundary, [None])
+                new_array = coil_mesh.boundary[boundary_ind]+offset
+                combined_boundary[-1] = new_array
+    
+            combined_vertices = np.concatenate([combined_vertices, coil_mesh.get_vertices()], axis=0)
+    
+        combined_bounding_box = np.array(
+            (
+                [np.min(combined_vertices[:, 0]), np.max(combined_vertices[:, 0])],
+                [np.min(combined_vertices[:, 1]), np.max(combined_vertices[:, 1])],
+                [np.min(combined_vertices[:, 2]), np.max(combined_vertices[:, 2])],
+            )
         )
-
-        # Compute combined boundary
-        c_boundary = coil_mesh.boundary
-        offset = combined_vertices.shape[0]
-        for boundary_ind in range(len(c_boundary)):
-            combined_boundary = np.append(combined_boundary, [None])
-            new_array = coil_mesh.boundary[boundary_ind]+offset
-            combined_boundary[-1] = new_array
-
-        combined_vertices = np.concatenate([combined_vertices, coil_mesh.get_vertices()], axis=0)
-
-    combined_bounding_box = np.array(
-        (
-            [np.min(combined_vertices[:, 0]), np.max(combined_vertices[:, 0])],
-            [np.min(combined_vertices[:, 1]), np.max(combined_vertices[:, 1])],
-            [np.min(combined_vertices[:, 2]), np.max(combined_vertices[:, 2])],
-        )
-    )
-
-    combined_mesh = DataStructure(vertices=combined_vertices, faces=combined_faces)
-    combined_mesh.uv = combined_uv
-    combined_mesh.n = combined_n
-    combined_mesh.boundary = combined_boundary
-    combined_mesh.bounding_box = combined_bounding_box
-    combined_mesh.mesh_part_vertex_ind = combined_mesh_part_vertex_ind
-
-    return combined_mesh
+    
+        combined_mesh = DataStructure(vertices=combined_vertices, faces=combined_faces)
+        combined_mesh.uv = combined_uv
+        combined_mesh.n = combined_n
+        combined_mesh.boundary = combined_boundary
+        combined_mesh.bounding_box = combined_bounding_box
+        combined_mesh.mesh_part_vertex_ind = combined_mesh_part_vertex_ind
+    
+        return combined_mesh
