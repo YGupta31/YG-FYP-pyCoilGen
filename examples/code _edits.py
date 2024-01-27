@@ -28,14 +28,14 @@ if __name__ == '__main__':
         'field_shape_function': 'z',  # definition of the target field
         'target_gradient_strength': 200,
         'coil_mesh': 'create bi-planar mesh',
-        'planar_mesh_parameter_list': [0.25,0.25,1,1,1,0,0,0,0,0,0.2],
+        'planar_mesh_parameter_list': [0.25,0.25,30,30,1,0,0,0,0,0,0.2],
         #'coil_mesh_file': 'bi_planer_rectangles_width_1000mm_distance_500mm.stl',
         'target_mesh_file': 'none',
         'b_0_direction': [0,0,1],
         'secondary_target_mesh_file': 'none',
         'secondary_target_weight': 0.5,
         'target_region_radius': 0.075,  # in meter
-        'target_region_resolution': 2,  # MATLAB 10 is the default
+        'target_region_resolution': 10,  # MATLAB 10 is the default
         'use_only_target_mesh_verts': True,
         'sf_source_file': 'none',
         # the number of potential steps that determines the later number of windings (Stream function discretization)
@@ -56,8 +56,8 @@ if __name__ == '__main__':
         'skip_inductance_calculation': True,
         'tikhonov_reg_factor': 15,  # Tikhonov regularization factor for the SF optimization
 
-        'output_directory': 'matrix determination',  # [Current directory]
-        'project_name': 'code_edits_iii',
+        'output_directory': 'trial_1',  # [Current directory]
+        'project_name': '0.25x0.25, 40x40, 15',
         'persistence_dir': 'debug',
         'debug': DEBUG_BASIC,
     }
