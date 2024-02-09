@@ -113,6 +113,7 @@ def pyCoilGen(log, input_args=None):
 
         if input_args.sf_source_file == 'none':
             # Read the input mesh
+            # Produce actual mesh and required symmetrical mesh ###################### new output symetrical_coil_mesh, symmetrical_target_mesh
             print('Load geometry:')
             coil_mesh, target_mesh, secondary_target_mesh = read_mesh(input_args)  # 01
 
@@ -130,8 +131,9 @@ def pyCoilGen(log, input_args=None):
 
             if get_level() > DEBUG_VERBOSE:
                 coil_mesh.display()
-
+            
             # Split the mesh and the stream function into disconnected pieces
+            # Split symmetrical coil mesh as well
             print('Split the mesh and the stream function into disconnected pieces.')
             timer.start()
             coil_parts = split_disconnected_mesh(coil_mesh)  # 00
@@ -140,13 +142,14 @@ def pyCoilGen(log, input_args=None):
             runpoint_tag = '00'
 
             # Upsample the mesh density by subdivision
+            # Apply to symmetrical mesh
             print('Upsample the mesh by subdivision:')
             timer.start()
             coil_parts = refine_mesh(coil_parts, input_args)  # 01
             timer.stop()
             runpoint_tag = '01'
 
-            # Parameterize the mesh
+            # Parameterize the mesh #### don't need to parametrize
             print('Parameterize the mesh:')
             timer.start()
             coil_parts = parameterize_mesh(coil_parts, input_args)  # 02
@@ -154,6 +157,7 @@ def pyCoilGen(log, input_args=None):
             runpoint_tag = '02'
 
             # Define the target field
+            #Define symmetrical target field##########
             print('Define the target field:')
             timer.start()
             target_field, is_suppressed_point = define_target_field(
@@ -173,6 +177,7 @@ def pyCoilGen(log, input_args=None):
             # input_args = temp_evaluation(solution, input_args, target_field)
 
             # Find indices of mesh nodes for one ring basis functions
+            # Only apply to non symmetric mesh
             print('Calculate mesh one ring:')
             timer.start()
             coil_parts = calculate_one_ring_by_mesh(coil_parts)  # 03
@@ -180,6 +185,7 @@ def pyCoilGen(log, input_args=None):
             runpoint_tag = '03'
 
             # Create the basis function container which represents the current density
+            # Apply to symmetrial mesh
             print('Create the basis function container which represents the current density:')
             timer.start()
             coil_parts = calculate_basis_functions(coil_parts)  # 04
@@ -187,6 +193,7 @@ def pyCoilGen(log, input_args=None):
             runpoint_tag = '04'
 
             # Calculate the sensitivity matrix Cn
+            # Only calculate sensitivity of symmertic target and coil mesh##########
             print('Calculate the sensitivity matrix:')
             timer.start()
             coil_parts = calculate_sensitivity_matrix(coil_parts, target_field, input_args)  # 05
@@ -194,6 +201,7 @@ def pyCoilGen(log, input_args=None):
             runpoint_tag = '05'
 
             # Calculate the gradient sensitivity matrix Gn
+            # Only calculate sensitivity of symmertic target and coil mesh ##########
             print('Calculate the gradient sensitivity matrix:')
             timer.start()
             coil_parts = calculate_gradient_sensitivity_matrix(coil_parts, target_field, input_args)  # 06
@@ -201,6 +209,7 @@ def pyCoilGen(log, input_args=None):
             runpoint_tag = '06'
 
             # Calculate the resistance matrix Rmn
+            # Only calculate resistance of symmertic target and coil mesh ##########
             print('Calculate the resistance matrix:')
             timer.start()
             coil_parts = calculate_resistance_matrix(coil_parts, input_args)  # 07
@@ -208,6 +217,8 @@ def pyCoilGen(log, input_args=None):
             runpoint_tag = '07'
 
             # Optimize the stream function toward target field and further constraints
+            # Only calculate optimsation of symmertic target and coil mesh ##########
+            # Expand to give final data.
             print('Optimize the stream function toward target field and secondary constraints:')
             timer.start()
             coil_parts, combined_mesh, sf_b_field = stream_function_optimization(coil_parts, target_field, input_args)
