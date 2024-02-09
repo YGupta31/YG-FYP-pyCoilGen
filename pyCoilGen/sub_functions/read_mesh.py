@@ -37,8 +37,75 @@ def read_mesh(input_args)->(Mesh, Mesh, Mesh):
 
     # Read the shielded mesh surface
     shielded_mesh = get_mesh(input_args, 'shield_mesh', 'secondary_target_mesh_file', mesh_plugins)
+    ## Apply symmetry to identify symmetric indicies ##
+    ####################################################
+    #Span the verticies and determine which satisfy our conditions;
+    
+    symmetry_planes = [1,1,1] #xy, xz, yz
+    # Coil Mesh defined as coil_mesh
+    xm = [] #index of satisfied verticies in mesh
+    ym = []
+    zm = []
+    #index of satisified verticies in target field
+    xt = []
+    yt = []
+    zt = []
+    #reduced mesh nodes
+    # for xy symmetry
+    if symmetry[0] != 0:
+        for i in range(len(coil_mesh.vertices)):
+            if coil_mesh.v[i][2] <=0:# for mesh
+                zm = zm + [i]
+        for i in range(len(target_mesh.v[2])):
+            if target_mesh.v[2][i]<0.000000000001:# for target field
+                zt = zt + [i]
+    else:
+        zm = np.arange(0, len(coil_mesh.v), 1)
+        zt = np.arange(0, len(target_mesh.v[2]), 1)            
+    # for xz symmetry
 
-    return coil_mesh, target_mesh, shielded_mesh
+    if symmetry[1] != 0:
+        for i in range(len(coil_mesh.v)):
+            if coil_mesh.v[i][1] <=0: # for mesh
+                ym = ym + [i]
+        for i in range(len(target_mesh.v[1])):
+            if target_mesh.v[1][i]<0.000000000001:# for target field
+                yt = yt + [i]
+    else:
+        ym = np.arange(0, len(coil_mesh.v), 1)
+        yt = np.arange(0, len(target_mesh.v[1]), 1)
+        
+    # for yz symmetry
+
+    if symmetry[2] != 0:
+        for i in range(len(coil_mesh.v)):
+            if coil_mesh.v[i][0] <=0: # for mesh
+                xm = xm + [i]
+        for i in range(len(target_mesh.v)):
+            if target_mesh.v[0][i]<0.000000000001:# for target field
+                xt = xt + [i]
+    else:
+        xm = np.arange(0, len(coil_mesh.v), 1)
+        xt = np.arange(0, len(target_mesh.v[0]), 1)
+
+    # find corresponding values of satisified verticies
+    mesh_inds =list(set(xm).intersection(ym, zm))
+    target_inds = list(set(xt).intersection(yt, zt))
+
+
+    # #boundary nodes
+    # sredboundary = mesh_inds.boundary_indicies()   
+    # #true boundary nodes
+    # t_boundary = list(set(coil_mesh.boundary).intersection(sredboundary))
+    # #symmetry plane boundary nodes
+    # splane_boundary = []
+    # for i in sredboundary:
+    #     if i not in t_boundary:
+    #         splane_boundary = splane_boundary +[i]
+            
+
+    ####################################################
+    return coil_mesh, target_mesh, shielded_mesh, mesh_inds, target_inds
 
 
 def get_mesh(input_args: Namespace, primary_parameter: str, legacy_parameter: str, mesh_plugins: list):
