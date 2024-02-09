@@ -27,16 +27,69 @@ def calculate_gradient_sensitivity_matrix(coil_parts, target_field, input_args):
     Returns:
         list: List of coil parts with the gradient sensitivity matrix calculated.
     """
+    # Only use symmetric coordinates
+    #############################
+    symmetry.planes = [1,1,1] #xy, xz, yz
+    coil_part = coil_parts[0]
+    coil_mesh = coil_part.coil_mesh
+    xm = [] #index of satisfied verticies in mesh
+    ym = []
+    zm = []
+    #index of satisified verticies in target field
+    xt = []
+    yt = []
+    zt = []
+    #reduced mesh nodes
+    # for xy symmetry
+    if symmetry[0] != 0:
+        for i in range(len(coil_mesh.vertices)):
+            if coil_mesh.vertices[i][2] <=0:# for mesh
+                zm = zm + [i]
+        for i in range(len(target_field.coords[2])):
+            if target_field.coords[2][i]<0.000000000001:# for target field
+                zt = zt + [i]
+    else:
+        zm = np.arange(0, len(coil_mesh.vertices), 1)
+        zt = np.arange(0, len(target_field.coords[2]), 1)            
+    # for xz symmetry
 
-    target_points = target_field.coords
+    if symmetry[1] != 0:
+        for i in range(len(coil_mesh.vertices)):
+            if coil_mesh.vertices[i][1] <=0: # for mesh
+                ym = ym + [i]
+        for i in range(len(target_field.coords[1])):
+            if target_field.coords[1][i]<0.000000000001:# for target field
+                yt = yt + [i]
+    else:
+        ym = np.arange(0, len(coil_mesh.vertices), 1)
+        yt = np.arange(0, len(target_field.coords[1]), 1)
+        
+    # for yz symmetry
+
+    if symmetry[2] != 0:
+        for i in range(len(coil_mesh.vertices)):
+            if coil_mesh.vertices[i][0] <=0: # for mesh
+                xm = xm + [i]
+        for i in range(len(target_field.coords[0])):
+            if target_field.coords[0][i]<0.000000000001:# for target field
+                xt = xt + [i]
+    else:
+        xm = np.arange(0, len(coil_mesh.vertices), 1)
+        xt = np.arange(0, len(target_field.coords[0]), 1)
+
+    # find corresponding values of satisified verticies
+    mesh_inds =list(set(xm).intersection(ym, zm))
+    target_inds = list(set(xt).intersection(yt, zt))
+    #########################################################################
+    target_points = target_field.coords[target_inds]
     gauss_order = input_args.gauss_order
     u_coord, v_coord, gauss_weight = gauss_legendre_integration_points_triangle(gauss_order)
 
-    # Calculate the sensitivity matrix for each coil part
-    for part_ind in range(len(coil_parts)):
+    # Calculate the sensitivity matrix for each coil part # only calcuate for 1 part of the coil
+    for part_ind in range(len(coil_parts)-1):
         biot_savart_coeff = 10 ** (-7)
         plate_thickness = 0.001
-        num_nodes = len(coil_parts[part_ind].basis_elements)
+        num_nodes = len(coil_parts[part_ind].basis_elements[mesh_inds])
         num_target_points = target_points.shape[1]  # TODO: Check 1 or 0?
         gradient_sensitivity_matrix = np.zeros((3, num_target_points, num_nodes))  # TODO: Check shape for Python
 
