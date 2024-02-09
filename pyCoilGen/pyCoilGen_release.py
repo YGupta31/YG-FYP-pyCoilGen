@@ -177,7 +177,7 @@ def pyCoilGen(log, input_args=None):
             # input_args = temp_evaluation(solution, input_args, target_field)
 
             # Find indices of mesh nodes for one ring basis functions
-            # Only apply to non symmetric mesh
+            # Apply to symmetric mesh as well
             print('Calculate mesh one ring:')
             timer.start()
             coil_parts = calculate_one_ring_by_mesh(coil_parts)  # 03
