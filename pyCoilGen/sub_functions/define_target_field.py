@@ -190,8 +190,47 @@ def define_target_field(coil_parts, target_mesh, secondary_target_mesh, input_ar
         target_field_out.weights = target_field_weighting
         target_field_out.target_field_group_inds = target_field_group_inds
         target_field_out.target_gradient_dbdxyz = np.array([target_dbzbx, target_dbzby, target_dbzbz])
-
-    return target_field_out, is_suppressed_point
+## Apply symmetry to identify symmetric indicies ##
+    ####################################################
+    #Span the verticies and determine which satisfy our conditions;
+    
+        symmetry_planes = [1,1,1] #xy, xz, yz
+        #index of satisified verticies in target field
+        xt = []
+        yt = []
+        zt = []
+        #reduced mesh nodes
+        # for xy symmetry
+        if symmetry[0] != 0:
+            for i in range(len(target_field_out.coords[2])):
+                if target_field_out.coords[2][i]<0.000000000001:# for target field
+                    zt = zt + [i]
+        else:
+            zt = np.arange(0, len(target_field_out.coords[2]), 1)            
+        # for xz symmetry
+    
+        if symmetry[1] != 0:
+            for i in range(len(target_field_out.coords[1])):
+                if target_field_out.coords[1][i]<0.000000000001:# for target field
+                    yt = yt + [i]
+        else:
+            yt = np.arange(0, len(target_field_out.coords[1]), 1)
+            
+        # for yz symmetry
+    
+        if symmetry[2] != 0:
+            for i in range(len(target_field_out.coords)):
+                if target_field_out.coords[0][i]<0.000000000001:# for target field
+                    xt = xt + [i]
+        else:
+            xt = np.arange(0, len(target_field_out.coords[0]), 1)
+    
+        # find corresponding values of satisified verticies
+        target_inds = list(set(xt).intersection(yt, zt))
+                
+    
+        ####################################################
+    return target_field_out, is_suppressed_point, target_inds
 
 
 def symbolic_calculation_of_gradient(input_args, target_field):
