@@ -146,7 +146,7 @@ def calculate_sensitivity_matrix(coil_parts: List[CoilPart], target_field, input
             if a.v[i][2]>0:
                 for j in mesh_inds:
                     if a.v[j][2] == -1*a.v[i][2] & a.v[j][1] == a.v[i][1] & a.v[j][0] == a.v[i][0]:
-                        coil_parts[0].gradient_sensitivity_matrix[:, :, i] = coil_parts[0].gradient_sensitivity_matrix[:, :, j]*symmetry[0]
+                        coil_parts[0].sensitivity_matrix[:, :, i] = coil_parts[0].sensitivity_matrix[:, :, j]*symmetry[0]
                         sym _inds = sym_inds +[i]
                         
     reflect_inds = np.append(mesh_inds, sym_inds)                
@@ -157,12 +157,12 @@ def calculate_sensitivity_matrix(coil_parts: List[CoilPart], target_field, input
             if a.v[i][1]>0:
                 for j in reflect_inds:
                     if a.v[j][2] == a.v[i][2] & a.v[j][1] == -1*a.v[i][1] & a.v[j][0] == a.v[i][0]:
-                        coil_parts[0].gradient_sensitivity_matrix[:, :, i] = coil_parts[0].gradient_sensitivity_matrix[:, :, j]*symmetry[0]
+                        coil_parts[0].sensitivity_matrix[:, :, i] = coil_parts[0].sensitivity_matrix[:, :, j]*symmetry[0]
                         sym _inds = sym_inds +[i]
     ## yz plane##
-    coil_parts[1].gradient_sensitivity_matrix = coil_parts[0].gradient_sensitivity_matrix
-    for i in range(len(coil_parts[1].gradient_sensitivity_matrix):
-        for j in range(len(coil_parts[1].gradient_sensitivity_matrix[i]):
-            for k in range(len(coil_parts[1].gradient_sensitivity_matrix[i][j]):
-                coil_parts[1].gradient_sensitivity_matrix[i][j][k] = coil_parts[1].gradient_sensitivity_matrix[i][j][k]*symmetry[2]
+    coil_parts[1].sensitivity_matrix = coil_parts[0].sensitivity_matrix
+    for i in range(len(coil_parts[1].sensitivity_matrix):
+        for j in range(len(coil_parts[1].sensitivity_matrix[i]):
+            for k in range(len(coil_parts[1].sensitivity_matrix[i][j]):
+                coil_parts[1].sensitivity_matrix[i][j][k] = coil_parts[1].sensitivity_matrix[i][j][k]*symmetry[2]
     return coil_parts
