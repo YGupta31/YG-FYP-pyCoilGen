@@ -89,7 +89,7 @@ def calculate_gradient_sensitivity_matrix(coil_parts, target_field, input_args):
     for part_ind in range(len(coil_parts)-1):
         biot_savart_coeff = 10 ** (-7)
         plate_thickness = 0.001
-        num_nodes = len(coil_parts[part_ind].basis_elements[mesh_inds])
+        num_nodes = len(coil_parts[part_ind].basis_elements)
         num_target_points = target_points.shape[1]  # TODO: Check 1 or 0?
         gradient_sensitivity_matrix = np.zeros((3, num_target_points, num_nodes))  # TODO: Check shape for Python
 
