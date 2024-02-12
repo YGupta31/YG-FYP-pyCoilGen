@@ -127,5 +127,43 @@ def split_disconnected_mesh(coil_mesh_in: Mesh) -> List[CoilPart]:
         coil_mesh.normal_rep = coil_mesh_in.normal_rep
 
         coil_parts.append(CoilPart(coil_mesh))
+    ## Apply symmetry to identify symmetric indicies ##
+    ####################################################
+    #Span the verticies and determine which satisfy our conditions;
+    coil_mesh = coil_parts[0].coil_mesh
+    symmetry_planes = [1,1,1] #xy, xz, yz
+    # Coil Mesh defined as coil_mesh
+    xm = [] #index of satisfied verticies in mesh
+    ym = []
+    zm = []
+    #reduced mesh nodes
+    # for xy symmetry
+    if symmetry[0] != 0:
+        for i in range(len(coil_mesh.v)):
+            if coil_mesh.v[i][2] <=0:# for mesh
+                zm = zm + [i]
+    else:
+        zm = np.arange(0, len(coil_mesh.v), 1)           
+    # for xz symmetry
 
-    return coil_parts
+    if symmetry[1] != 0:
+        for i in range(len(coil_mesh.v)):
+            if coil_mesh.v[i][1] <=0: # for mesh
+                ym = ym + [i]
+    else:
+        ym = np.arange(0, len(coil_mesh.v), 1)
+        
+    # for yz symmetry
+
+    if symmetry[2] != 0:
+        for i in range(len(coil_mesh.v)):
+            if coil_mesh.v[i][0] <=0: # for mesh
+                xm = xm + [i]
+    else:
+        xm = np.arange(0, len(coil_mesh.v), 1)
+
+    # find corresponding values of satisified verticies
+    mesh_inds =list(set(xm).intersection(ym, zm))
+
+    ####################################################
+    return coil_parts, mesh_inds
