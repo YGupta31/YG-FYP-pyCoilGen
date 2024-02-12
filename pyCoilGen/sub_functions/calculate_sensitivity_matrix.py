@@ -29,7 +29,62 @@ def calculate_sensitivity_matrix(coil_parts: List[CoilPart], target_field, input
         List[CoilPart]: Updated list of coil parts with sensitivity matrix.
 
     """
-    for part_ind in range(len(coil_parts)):
+        # Only use symmetric coordinates
+    #############################
+    symmetry.planes = [1,1,1] #xy, xz, yz
+    coil_part = coil_parts[0]
+    coil_mesh = coil_part.coil_mesh
+    xm = [] #index of satisfied verticies in mesh
+    ym = []
+    zm = []
+    #index of satisified verticies in target field
+    xt = []
+    yt = []
+    zt = []
+    #reduced mesh nodes
+    # for xy symmetry
+    if symmetry[0] != 0:
+        for i in range(len(coil_mesh.vertices)):
+            if coil_mesh.vertices[i][2] <=0:# for mesh
+                zm = zm + [i]
+        for i in range(len(target_field.coords[2])):
+            if target_field.coords[2][i]<0.000000000001:# for target field
+                zt = zt + [i]
+    else:
+        zm = np.arange(0, len(coil_mesh.vertices), 1)
+        zt = np.arange(0, len(target_field.coords[2]), 1)            
+    # for xz symmetry
+
+    if symmetry[1] != 0:
+        for i in range(len(coil_mesh.vertices)):
+            if coil_mesh.vertices[i][1] <=0: # for mesh
+                ym = ym + [i]
+        for i in range(len(target_field.coords[1])):
+            if target_field.coords[1][i]<0.000000000001:# for target field
+                yt = yt + [i]
+    else:
+        ym = np.arange(0, len(coil_mesh.vertices), 1)
+        yt = np.arange(0, len(target_field.coords[1]), 1)
+        
+    # for yz symmetry
+
+    if symmetry[2] != 0:
+        for i in range(len(coil_mesh.vertices)):
+            if coil_mesh.vertices[i][0] <=0: # for mesh
+                xm = xm + [i]
+        for i in range(len(target_field.coords[0])):
+            if target_field.coords[0][i]<0.000000000001:# for target field
+                xt = xt + [i]
+    else:
+        xm = np.arange(0, len(coil_mesh.vertices), 1)
+        xt = np.arange(0, len(target_field.coords[0]), 1)
+
+    # find corresponding values of satisified verticies
+    mesh_inds =list(set(xm).intersection(ym, zm))
+    target_inds = list(set(xt).intersection(yt, zt))
+    #########################################################################
+
+    for part_ind in range(len(coil_parts)-1):
         coil_part = coil_parts[part_ind]
 
         target_points = target_field.coords
@@ -43,7 +98,7 @@ def calculate_sensitivity_matrix(coil_parts: List[CoilPart], target_field, input
         num_target_points = target_points.shape[1]
         sensitivity_matrix = np.zeros((3, num_target_points, num_nodes))
 
-        for node_ind in range(num_nodes):
+        for node_ind in mesh_inds: # range(num_nodes):
             basis_element = coil_part.basis_elements[node_ind]
 
             dCx = np.zeros(num_target_points)
@@ -82,5 +137,32 @@ def calculate_sensitivity_matrix(coil_parts: List[CoilPart], target_field, input
             sensitivity_matrix[:, :, node_ind] = np.array([dCx, dCy, dCz]) * biot_savart_coeff
 
         coil_part.sensitivity_matrix = sensitivity_matrix
-
+#### Apply symmetry across planes ######
+    ## xy plane##
+    sym_inds = []
+    if symmetry[0] != 0:
+        a = coil_parts[0].coil_mesh
+        for i in range(len(a.v))
+            if a.v[i][2]>0:
+                for j in mesh_inds:
+                    if a.v[j][2] == -1*a.v[i][2] & a.v[j][1] == a.v[i][1] & a.v[j][0] == a.v[i][0]:
+                        coil_parts[0].gradient_sensitivity_matrix[:, :, i] = coil_parts[0].gradient_sensitivity_matrix[:, :, j]*symmetry[0]
+                        sym _inds = sym_inds +[i]
+                        
+    reflect_inds = np.append(mesh_inds, sym_inds)                
+    ## xz plane##
+    if symmetry[1] != 0:
+        a = coil_parts[0].coil_mesh
+        for i in range(len(a.v))
+            if a.v[i][1]>0:
+                for j in reflect_inds:
+                    if a.v[j][2] == a.v[i][2] & a.v[j][1] == -1*a.v[i][1] & a.v[j][0] == a.v[i][0]:
+                        coil_parts[0].gradient_sensitivity_matrix[:, :, i] = coil_parts[0].gradient_sensitivity_matrix[:, :, j]*symmetry[0]
+                        sym _inds = sym_inds +[i]
+    ## yz plane##
+    coil_parts[1].gradient_sensitivity_matrix = coil_parts[0].gradient_sensitivity_matrix
+    for i in range(len(coil_parts[1].gradient_sensitivity_matrix):
+        for j in range(len(coil_parts[1].gradient_sensitivity_matrix[i]):
+            for k in range(len(coil_parts[1].gradient_sensitivity_matrix[i][j]):
+                coil_parts[1].gradient_sensitivity_matrix[i][j][k] = coil_parts[1].gradient_sensitivity_matrix[i][j][k]*symmetry[2]
     return coil_parts
