@@ -81,7 +81,7 @@ def calculate_gradient_sensitivity_matrix(coil_parts, target_field, input_args):
     mesh_inds =list(set(xm).intersection(ym, zm))
     target_inds = list(set(xt).intersection(yt, zt))
     #########################################################################
-    target_points = target_field.coords[target_inds]
+    target_points = target_field.coords
     gauss_order = input_args.gauss_order
     u_coord, v_coord, gauss_weight = gauss_legendre_integration_points_triangle(gauss_order)
 
